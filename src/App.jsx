@@ -1,4 +1,4 @@
-import { Component } from 'react';
+import { useState, useEffect } from 'react';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import getImages from 'services/imagesApi';
@@ -8,86 +8,82 @@ import LoadMoreButton from 'components/LoadMoreButton/LoadMoreButton';
 import Loader from 'components/Loader/Loader';
 import Modal from 'components/Modal/Modal';
 
-class App extends Component {
-  state = {
-    images: [],
-    page: 1,
-    searchQuery: '',
-    loading: false,
-    largeImageURL: '',
-    tags: '',
-    total: 0,
-    error: null,
-    isModalOpen: false,
-  };
+const App = () => {
+  const [images, setImages] = useState([]);
+  const [page, setPage] = useState(1);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [largeImageURL, setLargeImageURL] = useState('');
+  const [tags, setTags] = useState('');
+  const [total, setTotal] = useState(0);
+  const [error, setError] = useState(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
-  componentDidUpdate(prevProps, prevState) {
-    const { searchQuery, page } = this.state;
-    if (prevState.searchQuery !== searchQuery || prevState.page !== page) {
-      this.fetchImages(searchQuery, page);
+  useEffect(() => {
+    if (searchQuery !== '' || page !== 1) {
+      fetchImages(searchQuery, page);
     }
-  }
+  }, [searchQuery, page]);
 
-  fetchImages = async (searchQuery, page) => {
+  const fetchImages = async (searchQuery, page) => {
     try {
-      this.setState({ loading: true });
+      setLoading(true);
 
       const data = await getImages(searchQuery, page);
 
       if (data.hits.length === 0) {
         return toast.error('There is nothing for this search. Try again!');
       }
-      this.setState(({ images }) => ({
-        images: [...images, ...data.hits],
-        total: data.totalHits,
-      }));
+      setImages(images => [...images, ...data.hits]);
+      setTotal(data.totalHits);
     } catch (error) {
-      this.setState({ error });
+      setError(error);
     } finally {
-      this.setState({ loading: false });
+      setLoading(false);
     }
   };
 
-  handleSearch = searchQuery => {
-    this.setState({ searchQuery, page: 1, images: [] });
+  const handleSearch = searchQuery => {
+    setSearchQuery(searchQuery);
+    setPage(1);
+    setImages([]);
   };
 
-  loadMore = () => {
-    this.setState(prev => ({ page: prev.page + 1 }));
+  const loadMore = () => {
+    setPage(page + 1);
   };
 
-  openModal = (largeImageURL, tags) => {
-    this.setState({ isModalOpen: true, largeImageURL, tags });
-  };
-  closeModal = () => {
-    this.setState({ isModalOpen: false, largeImageURL: '', tags: '' });
+  const openModal = (largeImageURL, tags) => {
+    setLargeImageURL(largeImageURL);
+    setTags(tags);
+    setIsModalOpen(true);
   };
 
-  render() {
-    const { images, loading, total, error, largeImageURL, tags, isModalOpen } =
-      this.state;
-    const totalPage = total / images.length;
-    return (
-      <div className="app">
-        <Searchbar onSubmit={this.handleSearch} />
-        {loading && <Loader />}
-        {images.length > 0 && (
-          <ImageGallery images={images} isModalOpen={this.openModal} />
-        )}
-        {images.length > 0 && totalPage > 1 && !loading && (
-          <LoadMoreButton onClick={this.loadMore} />
-        )}
-        {isModalOpen && (
-          <Modal
-            onClose={this.closeModal}
-            largeImageURL={largeImageURL}
-            tags={tags}
-          />
-        )}
-        {error && <p>There is nothing for this search. Try again!</p>}
-        <ToastContainer />
-      </div>
-    );
-  }
-}
+  const closeModal = () => {
+    setIsModalOpen(false);
+    setLargeImageURL('');
+    setTags('');
+  };
+
+  const totalPage = total / images.length;
+
+  return (
+    <div className="app">
+      <Searchbar onSubmit={handleSearch} />
+      {loading && <Loader />}
+      {images.length > 0 && (
+        <ImageGallery images={images} isModalOpen={openModal} />
+      )}
+      {images.length > 0 && totalPage > 1 && !loading && (
+        <LoadMoreButton onClick={loadMore} />
+      )}
+      {isModalOpen && (
+        <Modal onClose={closeModal} largeImageURL={largeImageURL} tags={tags} />
+      )}
+      {error && <p>There is nothing for this search. Try again!</p>}
+      <ToastContainer />
+    </div>
+  );
+};
+
 export default App;

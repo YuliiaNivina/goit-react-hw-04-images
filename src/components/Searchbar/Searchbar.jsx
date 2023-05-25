@@ -1,51 +1,45 @@
-import { Component } from 'react';
+import { useState } from 'react';
 import { toast } from 'react-toastify';
 import PropTypes from 'prop-types';
 
-class Searchbar extends Component {
-  state = {
-    searchQuery: '',
+const Searchbar = ({ onSubmit }) => {
+  const [searchQuery, setSearchQuery] = useState('');
+
+  const handleChange = evt => {
+    setSearchQuery(evt.target.value);
   };
 
-  handleChange = evt => {
-    this.setState({ searchQuery: evt.target.value });
-  };
-
-  handleSubmit = evt => {
+  const handleSubmit = evt => {
     evt.preventDefault();
 
-    const { searchQuery } = this.state;
     if (searchQuery.trim() === '') {
       return toast.error('Fill in the search field, please!');
     }
-    this.props.onSubmit(searchQuery);
+    onSubmit(searchQuery);
 
-    this.setState({ searchQuery: '' });
+    setSearchQuery('');
   };
 
-  render() {
-    const { searchQuery } = this.state;
-    return (
-      <header className="searchbar">
-        <form onSubmit={this.handleSubmit} className="searchForm">
-          <button type="submit" className="searchForm__button">
-            <span className="searchForm__button__label">Search</span>
-          </button>
+  return (
+    <header className="searchbar">
+      <form onSubmit={handleSubmit} className="searchForm">
+        <button type="submit" className="searchForm__button">
+          <span className="searchForm__button__label">Search</span>
+        </button>
 
-          <input
-            className="searchForm__input"
-            type="text"
-            autoComplete="off"
-            autoFocus
-            placeholder="Search images and photos"
-            value={searchQuery}
-            onChange={this.handleChange}
-          />
-        </form>
-      </header>
-    );
-  }
-}
+        <input
+          className="searchForm__input"
+          type="text"
+          autoComplete="off"
+          autoFocus
+          placeholder="Search images and photos"
+          value={searchQuery}
+          onChange={handleChange}
+        />
+      </form>
+    </header>
+  );
+};
 
 export default Searchbar;
 
